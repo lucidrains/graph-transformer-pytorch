@@ -2,6 +2,35 @@
 
 Implementation of <a href="https://arxiv.org/abs/2009.03509">Graph Transformer</a> in Pytorch, for potential use in replicating <a href="https://github.com/lucidrains/alphafold2">Alphafold2</a>. This was recently used by both <a href="https://www.biorxiv.org/content/10.1101/2021.06.02.446809v1">Costa et al</a> and <a href="https://www.biorxiv.org/content/10.1101/2021.06.14.448402v1">Bakers lab</a> for transforming MSA and pair-wise embedding into 3d coordinates.
 
+## Install
+
+```bash
+$ pip install graph-transformer-pytorch
+```
+
+## Usage
+
+```python
+import torch
+from graph_transformer_pytorch import GraphTransformer
+
+model = GraphTransformer(
+    dim = 256,
+    depth = 6,
+    edge_dim = 512,             # optional - if left out, edge dimensions is assumed to be the same as the node dimensions above
+    with_feedforwards = True,   # whether to add a feedforward after each attention layer, suggested by literature to be needed
+    gated_residual = True       # to use the gated residual to prevent over-smoothing
+)
+
+nodes = torch.randn(1, 128, 256)
+edges = torch.randn(1, 128, 128, 512)
+mask = torch.ones(1, 128).bool()
+
+nodes, edges = model(nodes, edges, mask = mask)
+
+nodes.shape # (1, 128, 256) - project to R^3 for coordinates
+```
+
 ## Citations
 
 ```bibtex
