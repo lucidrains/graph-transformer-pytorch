@@ -2,6 +2,8 @@ import torch
 from torch import nn, einsum
 from einops import rearrange
 
+from rotary_embedding_torch import RotaryEmbedding, apply_rotary_emb
+
 # helpers
 
 def exists(val):
@@ -53,6 +55,7 @@ class Attention(nn.Module):
     def __init__(
         self,
         dim,
+        pos_emb = None,
         dim_head = 64,
         heads = 8,
         edge_dim = None
@@ -63,6 +66,8 @@ class Attention(nn.Module):
         inner_dim = dim_head * heads
         self.heads = heads
         self.scale = dim_head ** -0.5
+
+        self.pos_emb = pos_emb
 
         self.to_q = nn.Linear(dim, inner_dim)
         self.to_kv = nn.Linear(dim, inner_dim * 2)
@@ -79,6 +84,13 @@ class Attention(nn.Module):
         e_kv = self.edges_to_kv(edges)
 
         q, k, v, e_kv = map(lambda t: rearrange(t, 'b ... (h d) -> (b h) ... d', h = h), (q, k, v, e_kv))
+
+        if exists(self.pos_emb):
+            freqs = self.pos_emb(torch.arange(nodes.shape[1], device = nodes.device))
+            freqs = rearrange(freqs, 'n d -> () n d')
+            q = apply_rotary_emb(freqs, q)
+            k = apply_rotary_emb(freqs, k)
+
         ek, ev = e_kv, e_kv
 
         k, v = map(lambda t: rearrange(t, 'b j d -> b () j d '), (k, v))
@@ -118,17 +130,20 @@ class GraphTransformer(nn.Module):
         heads = 8,
         gated_residual = True,
         with_feedforwards = False,
-        norm_edges = False
+        norm_edges = False,
+        rel_pos_emb = False
     ):
         super().__init__()
         self.layers = List([])
         edge_dim = default(edge_dim, dim)
         self.norm_edges = nn.LayerNorm(edge_dim) if norm_edges else nn.Identity()
 
+        pos_emb = RotaryEmbedding(dim_head) if rel_pos_emb else None
+
         for _ in range(depth):
             self.layers.append(List([
                 List([
-                    PreNorm(dim, Attention(dim, edge_dim = edge_dim, dim_head = dim_head, heads = heads)),
+                    PreNorm(dim, Attention(dim, pos_emb = pos_emb, edge_dim = edge_dim, dim_head = dim_head, heads = heads)),
                     GatedResidual(dim)
                 ]),
                 List([
