@@ -4,10 +4,6 @@
 
 Implementation of <a href="https://arxiv.org/abs/2009.03509">Graph Transformer</a> in Pytorch, for potential use in replicating <a href="https://github.com/lucidrains/alphafold2">Alphafold2</a>. This was recently used by both <a href="https://www.biorxiv.org/content/10.1101/2021.06.02.446809v1">Costa et al</a> and <a href="https://www.biorxiv.org/content/10.1101/2021.06.14.448402v1">Bakers lab</a> for transforming MSA and pair-wise embedding into 3d coordinates.
 
-Todo
-
-- [ ] add rotary embeddings for injecting adjacency information
-
 ## Install
 
 ```bash
