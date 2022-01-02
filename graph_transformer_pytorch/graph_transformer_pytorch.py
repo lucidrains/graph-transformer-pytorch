@@ -101,6 +101,8 @@ class Attention(nn.Module):
 
         if exists(mask):
             mask = rearrange(mask, 'b i -> b i ()') & rearrange(mask, 'b j -> b () j')
+            mask = repeat(mask, "b i j -> b num_heads i j", num_heads=self.heads)
+            mask = rearrange(mask, "b heads i j -> (b heads) i j")
             max_neg_value = -torch.finfo(sim.dtype).max
             sim.masked_fill_(~mask, max_neg_value)
 
