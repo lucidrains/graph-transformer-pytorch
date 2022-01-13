@@ -1,6 +1,6 @@
 import torch
 from torch import nn, einsum
-from einops import rearrange
+from einops import rearrange, repeat
 
 from rotary_embedding_torch import RotaryEmbedding, apply_rotary_emb
 
@@ -101,6 +101,7 @@ class Attention(nn.Module):
 
         if exists(mask):
             mask = rearrange(mask, 'b i -> b i ()') & rearrange(mask, 'b j -> b () j')
+            mask = repeat(mask, 'b i j -> (b h) i j', h = h)
             max_neg_value = -torch.finfo(sim.dtype).max
             sim.masked_fill_(~mask, max_neg_value)
 
