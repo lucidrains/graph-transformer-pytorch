@@ -132,12 +132,15 @@ class GraphTransformer(nn.Module):
         gated_residual = True,
         with_feedforwards = False,
         norm_edges = False,
-        rel_pos_emb = False
+        rel_pos_emb = False,
+        accept_adjacency_matrix = False
     ):
         super().__init__()
         self.layers = List([])
         edge_dim = default(edge_dim, dim)
         self.norm_edges = nn.LayerNorm(edge_dim) if norm_edges else nn.Identity()
+
+        self.adj_emb = nn.Embedding(2, edge_dim) if accept_adjacency_matrix else None
 
         pos_emb = RotaryEmbedding(dim_head) if rel_pos_emb else None
 
@@ -153,12 +156,28 @@ class GraphTransformer(nn.Module):
                 ]) if with_feedforwards else None
             ]))
 
-    def forward(self, nodes, edges, mask = None):
-        edges = self.norm_edges(edges)
+    def forward(
+        self,
+        nodes,
+        edges = None,
+        adj_mat = None,
+        mask = None
+    ):
+        batch, seq, _ = nodes.shape
+
+        if exists(edges):
+            edges = self.norm_edges(edges)
+
+        if exists(adj_mat):
+            assert adj_mat.shape == (batch, seq, seq)
+            assert exists(self.adj_emb), 'accept_adjacency_matrix must be set to True'
+            adj_mat = self.adj_emb(adj_mat.long())
+
+        all_edges = default(edges, 0) + default(adj_mat, 0)
 
         for attn_block, ff_block in self.layers:
             attn, attn_residual = attn_block
-            nodes = attn_residual(attn(nodes, edges, mask = mask), nodes)
+            nodes = attn_residual(attn(nodes, all_edges, mask = mask), nodes)
 
             if exists(ff_block):
                 ff, ff_residual = ff_block
