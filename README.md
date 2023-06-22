@@ -34,6 +34,31 @@ nodes, edges = model(nodes, edges, mask = mask)
 nodes.shape # (1, 128, 256) - project to R^3 for coordinates
 ```
 
+If you want it to handle an adjacency matrix
+
+```python
+import torch
+from graph_transformer_pytorch import GraphTransformer
+
+model = GraphTransformer(
+    dim = 256,
+    depth = 6,
+    edge_dim = 512,
+    with_feedforwards = True,
+    gated_residual = True,
+    rel_pos_emb = True,
+    accept_adjacency_matrix = True  # set this to True
+)
+
+nodes = torch.randn(2, 128, 256)
+adj_mat = torch.randint(0, 2, (2, 128, 128))
+mask = torch.ones(2, 128).bool()
+
+nodes, edges = model(nodes, adj_mat = adj_mat, mask = mask)
+
+nodes.shape # (1, 128, 256) - project to R^3 for coordinates
+```
+
 ## Citations
 
 ```bibtex

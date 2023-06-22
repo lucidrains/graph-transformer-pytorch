@@ -3,12 +3,13 @@ from setuptools import setup, find_packages
 setup(
   name = 'graph-transformer-pytorch',
   packages = find_packages(),
-  version = '0.0.3',
+  version = '0.1.1',
   license='MIT',
   description = 'Graph Transformer - Pytorch',
   author = 'Phil Wang',
   author_email = 'lucidrains@gmail.com',
   url = 'https://github.com/lucidrains/graph-transformer-pytorch',
+  long_description_content_type = 'text/markdown',
   keywords = [
     'artificial intelligence',
     'deep learning',
